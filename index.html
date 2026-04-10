@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GGI Deal Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #181818;
+    --border: #242424;
+    --accent: #c8f542;
+    --accent2: #f5c542;
+    --red: #ff4444;
+    --text: #f0f0f0;
+    --muted: #666;
+    --input-bg: #1a1a1a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 80px;
+  }
+
+  header {
+    width: 100%;
+    max-width: 760px;
+    margin-bottom: 48px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .logo span {
+    color: var(--muted);
+    font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    display: block;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .main {
+    width: 100%;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+  }
+
+  .card-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .fields.single { grid-template-columns: 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .field input,
+  .field select {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+    -webkit-appearance: none;
+  }
+
+  .field input:focus,
+  .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(200, 245, 66, 0.08);
+  }
+
+  .field input::placeholder { color: #333; }
+
+  select option { background: #1a1a1a; }
+
+  .prefix-wrap {
+    position: relative;
+  }
+
+  .prefix-wrap::before {
+    content: attr(data-prefix);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .prefix-wrap input { padding-left: 28px; }
+
+  .btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    padding: 18px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s, background 0.15s;
+    margin-top: 8px;
+  }
+
+  .btn:hover {
+    background: #d6ff55;
+    box-shadow: 0 0 30px rgba(200, 245, 66, 0.25);
+    transform: translateY(-1px);
+  }
+
+  .btn:active { transform: translateY(0); }
+
+  /* Results */
+  .results {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .results.visible { display: flex; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .result-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-card.accent-card {
+    border-color: var(--accent);
+    background: rgba(200, 245, 66, 0.04);
+  }
+
+  .result-card.warn-card {
+    border-color: var(--red);
+    background: rgba(255, 68, 68, 0.04);
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .result-card.accent-card::before { opacity: 1; }
+  .result-card.warn-card::before { background: var(--red); opacity: 1; }
+
+  .result-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .result-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px;
+    letter-spacing: 1px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .result-card.accent-card .result-value { color: var(--accent); }
+  .result-card.warn-card .result-value { color: var(--red); }
+
+  .result-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+
+  .breakdown {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+  }
+
+  .breakdown-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+
+  .breakdown-row .name { color: #aaa; }
+  .breakdown-row .val {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .breakdown-row.total {
+    margin-top: 4px;
+    padding-top: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .breakdown-row.total .val { color: var(--accent); font-size: 15px; }
+
+  .reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    align-self: flex-end;
+  }
+
+  .reset-btn:hover { border-color: var(--text); color: var(--text); }
+
+  .error-msg {
+    background: rgba(255, 68, 68, 0.08);
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    border-radius: 8px;
+    color: #ff8888;
+    font-size: 13px;
+    padding: 12px 16px;
+    display: none;
+  }
+
+  .error-msg.visible { display: block; }
+
+  @media (max-width: 520px) {
+    .fields { grid-template-columns: 1fr; }
+    .results-grid { grid-template-columns: 1fr; }
+    .logo { font-size: 32px; }
+  }
+
+  /* Animate in */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .results.visible .result-card,
+  .results.visible .breakdown {
+    animation: fadeUp 0.35s ease forwards;
+  }
+
+  .results.visible .result-card:nth-child(2) { animation-delay: 0.05s; }
+  .results.visible .breakdown { animation-delay: 0.1s; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    GGRETI
+    <span>Deal Analyzer</span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Inputs -->
+  <div class="card" id="inputCard">
+    <div class="card-title">Deal Inputs</div>
+
+    <div class="fields">
+      <div class="field">
+        <label>Transaction Type</label>
+        <select id="txType">
+          <option value="MLS">MLS (Standard)</option>
+          <option value="Off Market">Off Market</option>
+          <option value="Probate">Probate</option>
+        </select>
+      </div>
+
+
+
+      <div class="field">
+        <label>Contract Price</label>
+        <div class="prefix-wrap" data-prefix="$">
+          <input type="number" id="contractPrice" placeholder="350,000" min="0">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>ARV (Today)</label>
+        <div class="prefix-wrap" data-prefix="$">
+          <input type="number" id="arv" placeholder="450,000" min="0">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Construction Budget</label>
+        <div class="prefix-wrap" data-prefix="$">
+          <input type="number" id="constructionBudget" placeholder="40,000" min="0">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Added Days</label>
+        <input type="number" id="addedDays" placeholder="120" min="0" value="120">
+      </div>
+
+      <div class="field">
+        <label>Commission %</label>
+        <div class="prefix-wrap" data-prefix="%">
+          <input type="number" id="commissionPct" placeholder="2.5" min="0" max="100" step="0.1" value="2.5">
+        </div>
+      </div>
+
+    </div>
+
+    <div class="error-msg" id="errorMsg">Please fill in all fields before calculating.</div>
+
+    <button class="btn" onclick="calculate()">ANALYZE DEAL</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+
+    <div class="results-grid">
+      <div class="result-card" id="profitCard">
+        <div class="result-label">Total Profit</div>
+        <div class="result-value" id="profitVal">—</div>
+        <div class="result-sub" id="profitSub"></div>
+      </div>
+
+      <div class="result-card" id="unitsCard">
+        <div class="result-label">Units</div>
+        <div class="result-value" id="unitsVal">—</div>
+        <div class="result-sub">profit ÷ $20,000</div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <div class="breakdown-title">Cost Breakdown</div>
+
+      <div class="breakdown-row">
+        <span class="name">Contract Price</span>
+        <span class="val" id="br-contract">—</span>
+      </div>
+      <div class="breakdown-row">
+        <span class="name">Buy Expenses</span>
+        <span class="val" id="br-buy">—</span>
+      </div>
+      <div class="breakdown-row" id="lhfeesRow" style="display:none;">
+        <span class="name" style="padding-left:16px; color:#555;">↳ Lending Home Fees</span>
+        <span class="val" id="br-lhfees" style="color:#888;">—</span>
+      </div>
+      <div class="breakdown-row">
+        <span class="name">Construction</span>
+        <span class="val" id="br-construction">—</span>
+      </div>
+      <div class="breakdown-row">
+        <span class="name">Holding Expenses</span>
+        <span class="val" id="br-holding">—</span>
+      </div>
+      <div class="breakdown-row">
+        <span class="name">Sell Expenses</span>
+        <span class="val" id="br-sell">—</span>
+      </div>
+      <div class="breakdown-row">
+        <span class="name">Commission Credit</span>
+        <span class="val" id="br-commission">—</span>
+      </div>
+      <div class="breakdown-row">
+        <span class="name">ARV (Today)</span>
+        <span class="val" id="br-arv5">—</span>
+      </div>
+      <div class="divider"></div>
+      <div class="breakdown-row total">
+        <span class="name">Profit</span>
+        <span class="val" id="br-profit">—</span>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetForm()">← New Analysis</button>
+  </div>
+
+</div>
+
+<script>
+  function fmt(n) {
+    const abs = Math.abs(n);
+    const str = abs.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return (n < 0 ? '-$' : '$') + str;
+  }
+
+  function calculate() {
+    const txType     = document.getElementById('txType').value;
+    const contractPrice = parseFloat(document.getElementById('contractPrice').value);
+    const arvToday   = parseFloat(document.getElementById('arv').value);
+    const constrBudget = parseFloat(document.getElementById('constructionBudget').value);
+    const addedDays  = parseFloat(document.getElementById('addedDays').value) || 120;
+    const commissionRaw = document.getElementById('commissionPct').value;
+    const commissionPct = (commissionRaw === '' ? 2.5 : parseFloat(commissionRaw)) / 100;
+    const funder = 'Lending Home';
+    const errorMsg   = document.getElementById('errorMsg');
+
+    if (!contractPrice || !arvToday || isNaN(constrBudget)) {
+      errorMsg.classList.add('visible');
+      return;
+    }
+    errorMsg.classList.remove('visible');
+
+    // ── Replicate spreadsheet logic ──────────────────────────────────────
+
+    // Use ARV Today directly (no 5% adjustment)
+    const arv5 = arvToday;
+
+    // Buy Expenses (E15 = SUM E10:E13)
+    // E10: escrow fees by type
+    const escrowFees = txType === 'MLS' ? 1500 : txType === 'Off Market' ? 4000 : 1000;
+    // E13: Reign TC Fee (hardcoded 300)
+    const reignTC = 300;
+    // E11 (LH fees): 0 since funding = GGI; E12 prepaid: 0
+    // Construction = P32 (user supplied)
+    const repairCosts = constrBudget;
+
+    // E11 = Lending Home fees: $999 service fee + 0.5% origination on (homeLoan + construction)
+    // homeLoan (E23) = contractPrice * 0.85, rehabRequested (E24) = construction budget
+    const homeLoan = contractPrice * 0.85;
+    const lhFees = funder === 'Lending Home'
+      ? 999 + (homeLoan + repairCosts) * 0.005
+      : 0;
+    const buyExpenses = escrowFees + reignTC + lhFees; // E15 = E10 + E11 + E13
+
+    // D37 = months = addedDays / 30
+    const months = addedDays / 30;
+
+    // I13 = Commission Credit (MLS only, Off Market = $0)
+    const commCredit = txType === 'MLS' ? contractPrice * commissionPct : 0;
+
+    // E30 (LH) = contractPrice*0.15 (down payment) + buyExpenses - commCredit - EMD
+    const e30 = (contractPrice * 0.15) + buyExpenses - commCredit - 5000;
+
+    // E33 = E30 + construction (total capital deployed)
+    const e33 = e30 + repairCosts;
+
+    // E38 = I47: interest on actual loan (homeLoan + rehab) at 9% for addedDays
+    const e25 = homeLoan + repairCosts;
+    const i47 = ((e25 * 0.09) / 360) * addedDays;
+
+    // E39 = E35: interest on total funding (E33) at 10% / 12 * months
+    const e35 = e33 * 0.10 / 12 * months;
+
+    // Other holding line items
+    const electricity = months * 300;
+    const gas         = months * 120;
+    const water       = months * 170;
+    const sanitation  = months * 40;
+    const trash       = months * 40;
+    const propTaxes   = (1727 / 12) * months;
+    const insurance   = 250 * months;
+    const overhead    = 1975.81;
+    const holdingExpenses = i47 + e35 + overhead + electricity + gas + water +
+                            sanitation + trash + propTaxes + insurance;
+
+    // Sell Expenses (E72) — on ARV TODAY
+    const buyerComm    = arvToday * 0.025;
+    const sellerClose  = arvToday * 0.01;
+    const ownersPolicy = arvToday * 0.0059 * 0.3;
+    const rptt         = arvToday * 0.0051;
+    const settlement   = arvToday * 0.00306 / 2;
+    const switchMedia  = 269;
+    const wireFee      = 90;
+    const locRenewal   = 700;
+    const reignTC2     = 300;
+    const ggreTx       = 300;
+    const sparrow      = 2000;
+    const sellExpenses = buyerComm + sellerClose + ownersPolicy + rptt +
+                         settlement + switchMedia + wireFee + locRenewal +
+                         reignTC2 + ggreTx + sparrow;
+
+    // Total Acquisitions Cost
+    const totalAcqCost = contractPrice + buyExpenses + holdingExpenses + repairCosts + sellExpenses;
+
+    // I14 = I59 = base profit (arv5 - all costs)
+    const baseProfitI59 = arv5 - totalAcqCost;
+
+    // I19 = I13 + I14
+    const totalProfit = commCredit + baseProfitI59;
+
+
+    // Units = I27 = I19 / 20000
+    const units = totalProfit / 20000;
+
+    // ── Render ────────────────────────────────────────────────────────────
+    const profitCard = document.getElementById('profitCard');
+    const unitsCard  = document.getElementById('unitsCard');
+
+    document.getElementById('profitVal').textContent = fmt(totalProfit);
+    document.getElementById('profitSub').textContent = totalProfit >= 0 ? 'projected net' : 'projected loss';
+    document.getElementById('unitsVal').textContent  = units.toFixed(2);
+
+    // Accent / warn
+    profitCard.classList.remove('accent-card','warn-card');
+    unitsCard.classList.remove('accent-card','warn-card');
+
+    if (totalProfit >= 0) {
+      profitCard.classList.add('accent-card');
+      unitsCard.classList.add('accent-card');
+    } else {
+      profitCard.classList.add('warn-card');
+      unitsCard.classList.add('warn-card');
+    }
+
+    // Breakdown
+    document.getElementById('br-contract').textContent     = fmt(contractPrice);
+    document.getElementById('br-buy').textContent          = fmt(buyExpenses);
+    document.getElementById('br-construction').textContent = fmt(repairCosts);
+    document.getElementById('br-holding').textContent      = fmt(holdingExpenses);
+    document.getElementById('br-sell').textContent         = fmt(sellExpenses);
+    document.getElementById('br-commission').textContent   = commCredit > 0 ? '+' + fmt(commCredit) : fmt(commCredit);
+    document.getElementById('br-arv5').textContent         = fmt(arv5);
+    document.getElementById('br-profit').textContent       = fmt(totalProfit);
+
+    document.getElementById('lhfeesRow').style.display = lhFees > 0 ? 'flex' : 'none';
+    document.getElementById('inputCard').style.display = 'none';
+    document.getElementById('results').classList.add('visible');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('inputCard').style.display = 'block';
+    document.getElementById('results').classList.remove('visible');
+  }
+</script>
+</body>
+</html>
